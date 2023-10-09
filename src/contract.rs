@@ -12,6 +12,7 @@ use crate::msg::{
     QueryMsg, 
     Tmessage, 
     SendTokenMsg, 
+    GetPhaseResponse,
     // MintingInfo,
 };
 use crate::state::{State, STATE};
@@ -72,7 +73,7 @@ pub fn execute(
 }
 
 pub mod execute {
-    use cosmwasm_std::{Uint128, coins, WasmMsg};
+    use cosmwasm_std::Decimal;
 
     #[allow(unused_imports)]
     use crate::state;
@@ -80,12 +81,14 @@ pub mod execute {
     use super::*;
 
     pub fn mint(deps: DepsMut, info: &MessageInfo, _env: Env) -> Result<Response, ContractError> {
-        let s = STATE.load(deps.storage)?;
+        let mut s = STATE.load(deps.storage)?;
 
-        if info.funds[0].amount != s.phases[s.current_phase as usize].price {
+        if info.funds[0].amount < s.phases[s.current_phase as usize].price + (s.phases[s.current_phase as usize].price * Decimal::percent(3)) {
             return Err(ContractError::InsufficientFunds {});
         }
         
+        s.last_minted += 1;
+
         return Ok(
             Response::new()
             .add_attribute("action", "delist")
@@ -96,7 +99,7 @@ pub mod execute {
                         &Tmessage{ 
                             transfer_nft: SendTokenMsg { 
                                 recipient: info.sender.as_str().to_string(), 
-                                token_id: "1".to_string() // TODO: get token id
+                                token_id: (&s.last_minted - 1).to_string() // TODO: get token id
                             }
                         }
                     ).unwrap(),
@@ -105,12 +108,15 @@ pub mod execute {
             )
         );
     }
+
+    
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetMetadata {} => to_binary(&query::get_metadata(deps)?),
+        QueryMsg::GetPhase {} => to_binary(&query::get_phase(deps)?),
     }
 }
 
@@ -129,5 +135,14 @@ pub mod query {
             contract: state.contract
         })
     }
-}
 
+    pub fn get_phase(deps: Deps) -> StdResult<GetPhaseResponse> {
+        let state = STATE.load(deps.storage)?;
+        Ok(GetPhaseResponse {
+            current: state.current_phase,
+            price: state.phases[state.current_phase as usize].price,
+            ends: state.phases[state.current_phase as usize].ends,
+            started: state.phases[state.current_phase as usize].starts
+        })
+    }
+}

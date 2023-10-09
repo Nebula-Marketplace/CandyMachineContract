@@ -1,6 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Uint128;
-
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -84,6 +83,9 @@ pub struct Revoke {
 pub enum QueryMsg {
     #[returns(GetMetadataResponse)]
     GetMetadata {},
+    
+    #[returns(GetPhaseResponse)]
+    GetPhase {},
 }
 
 // We define a custom struct for each query response
@@ -102,6 +104,14 @@ pub struct GetMetadataResponse {
 pub struct GetListedResponse {
     pub number: i32,
     pub listed: Vec<NFT>
+}
+
+#[cw_serde]
+pub struct GetPhaseResponse {
+    pub current: i8,
+    pub price: Uint128,
+    pub ends: i128,
+    pub started: i128
 }
 
 #[cw_serde]
