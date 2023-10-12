@@ -16,7 +16,8 @@ pub struct InstantiateMsg {
     pub supply: i32,
     pub creators: Vec<Creator>,
     pub basis_points: i8, // 100 basis points = 1% of list price
-    pub phases: Vec<Phase>
+    pub phases: Vec<Phase>,
+    pub codeid: u64, // Cw721 code id. needs to have same mint interface as talis 
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
@@ -53,7 +54,7 @@ pub struct Creator {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    Mint {}
+    Mint { signature: String}
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema)]

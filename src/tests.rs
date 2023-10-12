@@ -32,6 +32,7 @@ fn init() {
             }],
             basis_points: 100,
             phases: vec![],
+            codeid: 2619,
         }, 
         &vec![], 
         "Contract", 

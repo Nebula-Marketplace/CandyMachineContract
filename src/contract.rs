@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Addr, BankMsg};
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version;
 use cosmwasm_std::WasmMsg::Execute as MsgExecuteContract;
 
@@ -68,7 +68,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Mint { } => execute::mint(deps, &info, env),
+        ExecuteMsg::Mint { signature } => execute::mint(deps, &info, env, signature),
     }
 }
 
@@ -80,7 +80,16 @@ pub mod execute {
 
     use super::*;
 
-    pub fn mint(deps: DepsMut, info: &MessageInfo, _env: Env) -> Result<Response, ContractError> {
+    // Need to pass a signed message from the contract verifier. this will be built into the mint site.
+    /*
+    message = {token_id: 1, pub: "address"}
+    signature = sign(message)
+
+    then pass that signature into the mint message, where we can verify it.
+    This mechanism will protect against botting, as it means you have to mint through a website.
+    Custom sites will init their contract with their own verifier, hence why this is not hardcoded.
+    */
+    pub fn mint(deps: DepsMut, info: &MessageInfo, _env: Env, signature: String) -> Result<Response, ContractError> {
         let mut s = STATE.load(deps.storage)?;
 
         if info.funds[0].amount < s.phases[s.current_phase as usize].price + (s.phases[s.current_phase as usize].price * Decimal::percent(3)) {
