@@ -46,7 +46,7 @@ pub fn instantiate(
         banner_uri: msg.banner_uri,
         supply: msg.supply,
         owner: deps.querier.query_wasm_contract_info(contractAddress).unwrap().creator,
-        phases: vec![],
+        phases: msg.phases,
         fee_paid: false,
         last_minted: 0,
         current_phase: 0,
@@ -89,18 +89,33 @@ pub mod execute {
     This mechanism will protect against botting, as it means you have to mint through a website.
     Custom sites will init their contract with their own verifier, hence why this is not hardcoded.
     */
+    #[allow(unused_variables)]
     pub fn mint(deps: DepsMut, info: &MessageInfo, _env: Env, signature: String) -> Result<Response, ContractError> {
         let mut s = STATE.load(deps.storage)?;
 
+        // check if the phase is correct
+        if s.phases[s.current_phase as usize].ends < _env.block.time.seconds().into() {
+            s.current_phase += 1;
+        }
+
+        // check if enough funds were passed
         if info.funds[0].amount < s.phases[s.current_phase as usize].price + (s.phases[s.current_phase as usize].price * Decimal::percent(3)) {
             return Err(ContractError::InsufficientFunds {});
+        }
+
+        // check if the sender is allowed to mint in this phase
+        if s.phases[s.current_phase as usize].allowed.contains(&info.sender.as_str().to_string()) == false {
+            return Err(ContractError::Unauthorized {});
         }
         
         s.last_minted += 1;
 
+        STATE.save(deps.storage, &s)?;
+
         return Ok(
             Response::new()
-            .add_attribute("action", "delist")
+            .add_attribute("action", "mint")
+            .add_attribute("token", &s.last_minted.to_string())
             .add_message(
                 MsgExecuteContract { 
                     contract_addr: s.contract, 
