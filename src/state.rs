@@ -21,6 +21,13 @@ pub struct State {
     pub stopped: bool
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+pub struct Mint {
+    pub token_id: String,
+    pub owner: String,
+    pub phase: i8
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, Eq)]
 pub struct Phase {
     pub allowed: Vec<String>,
@@ -31,3 +38,4 @@ pub struct Phase {
 }
 
 pub const STATE: Item<State> = Item::new("state");
+pub const MINTS: Item<Vec<Mint>> = Item::new("mints");
