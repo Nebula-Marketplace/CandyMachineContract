@@ -30,6 +30,7 @@ pub struct Mint {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, Eq)]
 pub struct Phase {
+    pub name: String,
     pub allowed: Vec<String>,
     pub price: Uint128,
     pub ends: i128,

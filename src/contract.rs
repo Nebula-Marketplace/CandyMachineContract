@@ -15,7 +15,7 @@ use crate::msg::{
     GetPhaseResponse,
     // MintingInfo,
 };
-use crate::state::{State, STATE};
+use crate::state::{State, STATE, Phase};
 
 use serde::{Deserialize, Serialize};
 
@@ -104,7 +104,7 @@ pub mod execute {
         }
 
         // check if the sender is allowed to mint in this phase
-        if s.phases[s.current_phase as usize].allowed.contains(&info.sender.as_str().to_string()) == false {
+        if s.phases[s.current_phase as usize].allowed.contains(&info.sender.as_str().to_string()) == false && s.phases[s.current_phase as usize].allowed[0] != "*" {
             return Err(ContractError::Unauthorized {});
         }
         
@@ -156,17 +156,14 @@ pub mod query {
             logo_uri: state.logo_uri,
             banner_uri: state.banner_uri,
             supply: state.supply,
-            contract: state.contract
+            contract: state.contract,
+            phases: state.phases
         })
     }
 
-    pub fn get_phase(deps: Deps) -> StdResult<GetPhaseResponse> {
+    pub fn get_phase(deps: Deps) -> StdResult<Phase> {
         let state = STATE.load(deps.storage)?;
-        Ok(GetPhaseResponse {
-            current: state.current_phase,
-            price: state.phases[state.current_phase as usize].price,
-            ends: state.phases[state.current_phase as usize].ends,
-            started: state.phases[state.current_phase as usize].starts
-        })
+        let current = state.phases[state.current_phase as usize].clone();
+        Ok(current)
     }
 }

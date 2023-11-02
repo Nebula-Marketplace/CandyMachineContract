@@ -98,7 +98,8 @@ pub struct GetMetadataResponse {
     pub logo_uri: String,
     pub banner_uri: String,
     pub supply: i32,
-    pub contract: String
+    pub contract: String,
+    pub phases: Vec<Phase>,
 }
 
 #[cw_serde]
@@ -112,7 +113,9 @@ pub struct GetPhaseResponse {
     pub current: i8,
     pub price: Uint128,
     pub ends: i128,
-    pub started: i128
+    pub started: i128,
+    pub allowlist: Vec<String>,
+    pub name: String
 }
 
 #[cw_serde]
