@@ -104,7 +104,7 @@ pub mod execute {
         }
 
         // check if the sender is allowed to mint in this phase
-        if s.phases[s.current_phase as usize].allowed.contains(&info.sender.as_str().to_string()) == false && s.phases[s.current_phase as usize].allowed[0] != "*" {
+        if s.phases[s.current_phase as usize].allowed.contains(&info.sender.as_str().to_string()) == false && s.phases[s.current_phase as usize].allowed[0] != "*".to_string() {
             return Err(ContractError::Unauthorized {});
         }
         
