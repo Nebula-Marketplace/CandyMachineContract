@@ -81,7 +81,7 @@ pub struct User {
 }
 
 pub mod execute {
-    use cosmwasm_std::Decimal;
+    use cosmwasm_std::{Decimal, Uint128};
 
     #[allow(unused_imports)]
     use crate::state;
@@ -145,7 +145,7 @@ pub mod execute {
         return Ok(
             Response::new()
             .add_attribute("action", "mint")
-            .add_attribute("token", &s.last_minted.to_string())
+            .add_attribute("token", (&s.last_minted - 1).to_string())
             .add_message(
                 MsgExecuteContract { 
                     contract_addr: s.contract, 
@@ -163,7 +163,20 @@ pub mod execute {
         );
     }
 
-    
+    pub fn set_phase_times(deps: DepsMut, _env: Env, phase: usize, start: Uint128, end: Uint128, sender: String) -> Result<Response, ContractError> {
+        let mut s = STATE.load(deps.storage)?;
+
+        if s.owner != sender {
+            return Err(ContractError::Unauthorized {});
+        }
+
+        s.phases[phase].starts = start.u128() as i128;
+        s.phases[phase].ends = end.u128() as i128;
+
+        STATE.save(deps.storage, &s)?;
+
+        return Ok(Response::new());
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
