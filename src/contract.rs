@@ -19,6 +19,8 @@ use crate::state::{State, STATE, Phase};
 
 use serde::{Deserialize, Serialize};
 
+use serde_json::from_slice;
+
 // version info for migration info
 const CONTRACT_NAME: &str = "Nebula CandyMachine";
 const CONTRACT_VERSION: &str = "0.0.1";
@@ -72,6 +74,12 @@ pub fn execute(
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct User {
+    pub address: String,
+    pub phases: Vec<u32>,
+}
+
 pub mod execute {
     use cosmwasm_std::Decimal;
 
@@ -107,9 +115,31 @@ pub mod execute {
         if s.phases[s.current_phase as usize].allowed.contains(&info.sender.as_str().to_string()) == false && s.phases[s.current_phase as usize].allowed[0] != "*".to_string() {
             return Err(ContractError::Unauthorized {});
         }
-        
+
+        let mut user = deps.storage.get(info.sender.as_bytes());
+
+        let mut data: User;
+
+        if user.is_none() { 
+            data = User {
+                address: info.sender.to_string(),
+                phases: vec![]
+            };
+            while data.phases.len() <= s.current_phase as usize {
+                data.phases.push(0);
+            }
+        } else {
+            data = from_slice(&user.unwrap()).expect("Could not deserialize user data");
+        }
+
+        if data.phases[s.current_phase as usize] >= s.phases[s.current_phase as usize].allocation as u32 {
+            return Err(ContractError::Unauthorized {});
+        }
+
+        data.phases[s.current_phase as usize] += 1;
         s.last_minted += 1;
 
+        deps.storage.set(info.sender.as_bytes(), &to_binary(&data).unwrap());
         STATE.save(deps.storage, &s)?;
 
         return Ok(
