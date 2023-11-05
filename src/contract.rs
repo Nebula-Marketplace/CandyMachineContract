@@ -71,7 +71,7 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Mint { signature } => execute::mint(deps, &info, env, signature),
-        ExecuteMsg::Update { start, end, phase } => execute::set_phase_times(deps, env, phase, start, end, info.sender.to_string()),
+        // ExecuteMsg::Update { start, end, phase } => execute::set_phase_times(deps, env, phase, start, end, info.sender.to_string()),
     }
 }
 
@@ -164,20 +164,20 @@ pub mod execute {
         );
     }
 
-    pub fn set_phase_times(deps: DepsMut, _env: Env, phase: u8, start: Uint128, end: Uint128, sender: String) -> Result<Response, ContractError> {
-        let mut s = STATE.load(deps.storage)?;
+    // pub fn set_phase_times(deps: DepsMut, _env: Env, phase: u8, start: Uint128, end: Uint128, sender: String) -> Result<Response, ContractError> {
+    //     let mut s = STATE.load(deps.storage)?;
 
-        if s.owner != sender {
-            return Err(ContractError::Unauthorized {});
-        }
+    //     if s.owner != sender {
+    //         return Err(ContractError::Unauthorized {});
+    //     }
 
-        s.phases[phase as usize].starts = start;
-        s.phases[phase as usize].ends = end;
+    //     s.phases[phase as usize].starts = start;
+    //     s.phases[phase as usize].ends = end;
 
-        STATE.save(deps.storage, &s)?;
+    //     STATE.save(deps.storage, &s)?;
 
-        return Ok(Response::new());
-    }
+    //     return Ok(Response::new());
+    // }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
