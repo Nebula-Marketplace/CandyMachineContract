@@ -82,7 +82,7 @@ pub struct User {
 }
 
 pub mod execute {
-    use cosmwasm_std::{Decimal, Uint128};
+    use cosmwasm_std::{Decimal, Uint128, BankMsg};
 
     #[allow(unused_imports)]
     use crate::state;
@@ -160,7 +160,10 @@ pub mod execute {
                     ).unwrap(),
                     funds: vec![] 
                 }
-            )
+            ).add_message(BankMsg::Send {
+                to_address: s.owner,
+                amount: vec![info.funds[0].clone()]
+            })
         );
     }
 
