@@ -52,7 +52,7 @@ pub fn instantiate(
         fee_paid: false,
         last_minted: 0,
         current_phase: 0,
-        stopped: true,
+        stopped: false,
     };
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     STATE.save(deps.storage, &state)?;
@@ -103,7 +103,7 @@ pub mod execute {
         let mut s = STATE.load(deps.storage)?;
 
         // check if the phase is correct
-        if s.phases[s.current_phase as usize].ends < _env.block.time.seconds().into() {
+        if s.phases[s.current_phase as usize].ends <= _env.block.time.seconds().into() {
             s.current_phase += 1;
         }
 
