@@ -116,7 +116,7 @@ pub mod execute {
             return Err(ContractError::Unauthorized {});
         }
 
-        let mut user = deps.storage.get(info.sender.as_bytes());
+        let user = deps.storage.get(info.sender.as_bytes());
 
         let mut data: User;
 
