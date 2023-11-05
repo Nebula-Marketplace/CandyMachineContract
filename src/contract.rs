@@ -71,6 +71,7 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Mint { signature } => execute::mint(deps, &info, env, signature),
+        ExecuteMsg::Update { start, end, phase } => execute::set_phase_times(deps, env, phase, start, end, info.sender.to_string()),
     }
 }
 

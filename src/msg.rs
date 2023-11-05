@@ -55,7 +55,7 @@ pub struct Creator {
 #[cw_serde]
 pub enum ExecuteMsg {
     Mint { signature: String},
-    Update { start: Uint128, end: Uint128 }
+    Update { start: Uint128, end: Uint128, phase: usize }
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema)]
