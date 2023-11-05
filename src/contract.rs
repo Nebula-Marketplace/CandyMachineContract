@@ -19,8 +19,6 @@ use crate::state::{State, STATE, Phase};
 
 use serde::{Deserialize, Serialize};
 
-use serde_json::from_slice;
-
 // version info for migration info
 const CONTRACT_NAME: &str = "Nebula CandyMachine";
 const CONTRACT_VERSION: &str = "0.0.1";
@@ -52,7 +50,7 @@ pub fn instantiate(
         fee_paid: false,
         last_minted: 0,
         current_phase: 0,
-        stopped: false,
+        stopped: true,
     };
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     STATE.save(deps.storage, &state)?;
@@ -71,18 +69,11 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Mint { signature } => execute::mint(deps, &info, env, signature),
-        // ExecuteMsg::Update { start, end, phase } => execute::set_phase_times(deps, env, phase, start, end, info.sender.to_string()),
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub struct User {
-    pub address: String,
-    pub phases: Vec<u32>,
-}
-
 pub mod execute {
-    use cosmwasm_std::{Decimal, Uint128, BankMsg};
+    use cosmwasm_std::{Decimal, BankMsg};
 
     #[allow(unused_imports)]
     use crate::state;
@@ -116,37 +107,15 @@ pub mod execute {
         if s.phases[s.current_phase as usize].allowed.contains(&info.sender.as_str().to_string()) == false && s.phases[s.current_phase as usize].allowed[0] != "*".to_string() {
             return Err(ContractError::Unauthorized {});
         }
-
-        let user = deps.storage.get(info.sender.as_bytes());
-
-        let mut data: User;
-
-        if user.is_none() { 
-            data = User {
-                address: info.sender.to_string(),
-                phases: vec![]
-            };
-            while data.phases.len() <= s.current_phase as usize {
-                data.phases.push(0);
-            }
-        } else {
-            data = from_slice(&user.unwrap()).expect("Could not deserialize user data");
-        }
-
-        if data.phases[s.current_phase as usize] >= s.phases[s.current_phase as usize].allocation as u32 {
-            return Err(ContractError::Unauthorized {});
-        }
-
-        data.phases[s.current_phase as usize] += 1;
+        
         s.last_minted += 1;
 
-        deps.storage.set(info.sender.as_bytes(), &to_binary(&data).unwrap());
         STATE.save(deps.storage, &s)?;
 
         return Ok(
             Response::new()
             .add_attribute("action", "mint")
-            .add_attribute("token", (&s.last_minted - 1).to_string())
+            .add_attribute("token", &s.last_minted.to_string())
             .add_message(
                 MsgExecuteContract { 
                     contract_addr: s.contract, 
@@ -160,27 +129,11 @@ pub mod execute {
                     ).unwrap(),
                     funds: vec![] 
                 }
-            ).add_message(BankMsg::Send {
-                to_address: s.owner,
-                amount: vec![info.funds[0].clone()]
-            })
+            ).add_message(BankMsg::Send { to_address: s.owner, amount: vec![info.funds[0].clone()] })
         );
     }
 
-    // pub fn set_phase_times(deps: DepsMut, _env: Env, phase: u8, start: Uint128, end: Uint128, sender: String) -> Result<Response, ContractError> {
-    //     let mut s = STATE.load(deps.storage)?;
-
-    //     if s.owner != sender {
-    //         return Err(ContractError::Unauthorized {});
-    //     }
-
-    //     s.phases[phase as usize].starts = start;
-    //     s.phases[phase as usize].ends = end;
-
-    //     STATE.save(deps.storage, &s)?;
-
-    //     return Ok(Response::new());
-    // }
+    
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
