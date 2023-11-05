@@ -117,30 +117,30 @@ pub mod execute {
             return Err(ContractError::Unauthorized {});
         }
 
-        let user = deps.storage.get(info.sender.as_bytes());
+        // let user = deps.storage.get(info.sender.as_bytes());
 
-        let mut data: User;
+        // let mut data: User;
 
-        if user.is_none() { 
-            data = User {
-                address: info.sender.to_string(),
-                phases: vec![]
-            };
-            while data.phases.len() <= s.current_phase as usize {
-                data.phases.push(0);
-            }
-        } else {
-            data = from_slice(&user.unwrap()).expect("Could not deserialize user data");
-        }
+        // if user.is_none() { 
+        //     data = User {
+        //         address: info.sender.to_string(),
+        //         phases: vec![]
+        //     };
+        //     while data.phases.len() <= s.current_phase as usize {
+        //         data.phases.push(0);
+        //     }
+        // } else {
+        //     data = from_slice(&user.unwrap()).expect("Could not deserialize user data");
+        // }
 
-        if data.phases[s.current_phase as usize] >= s.phases[s.current_phase as usize].allocation as u32 {
-            return Err(ContractError::Unauthorized {});
-        }
+        // if data.phases[s.current_phase as usize] >= s.phases[s.current_phase as usize].allocation as u32 {
+        //     return Err(ContractError::Unauthorized {});
+        // }
 
-        data.phases[s.current_phase as usize] += 1;
+        // data.phases[s.current_phase as usize] += 1;
         s.last_minted += 1;
 
-        deps.storage.set(info.sender.as_bytes(), &to_binary(&data).unwrap());
+        // deps.storage.set(info.sender.as_bytes(), &to_binary(&data).unwrap());
         STATE.save(deps.storage, &s)?;
 
         return Ok(
