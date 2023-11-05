@@ -33,8 +33,8 @@ pub struct Phase {
     pub name: String,
     pub allowed: Vec<String>,
     pub price: Uint128,
-    pub ends: i128,
-    pub starts: i128,
+    pub ends: Uint128,
+    pub starts: Uint128,
     pub allocation: i32,
 }
 
