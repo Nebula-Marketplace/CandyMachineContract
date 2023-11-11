@@ -12,7 +12,6 @@ use crate::msg::{
     QueryMsg, 
     Tmessage, 
     SendTokenMsg, 
-    GetPhaseResponse,
     // MintingInfo,
 };
 use crate::state::{State, STATE, Phase};
@@ -96,6 +95,7 @@ pub mod execute {
         // check if the phase is correct
         if s.phases[s.current_phase as usize].ends.u128() <= _env.block.time.seconds().into() {
             s.current_phase += 1;
+            STATE.save(deps.storage, &s)?; // save the new state, just in case the remainder of the call fails. this will make querying faster too.
         }
 
         // check if enough funds were passed
@@ -137,10 +137,10 @@ pub mod execute {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetMetadata {} => to_binary(&query::get_metadata(deps)?),
-        QueryMsg::GetPhase {} => to_binary(&query::get_phase(deps)?),
+        QueryMsg::GetPhase {} => to_binary(&query::get_phase(deps, env)?),
     }
 }
 
@@ -161,9 +161,12 @@ pub mod query {
         })
     }
 
-    pub fn get_phase(deps: Deps) -> StdResult<Phase> {
+    pub fn get_phase(deps: Deps, env: Env) -> StdResult<Phase> {
         let state = STATE.load(deps.storage)?;
-        let current = state.phases[state.current_phase as usize].clone();
+        let mut current = state.phases[state.current_phase as usize].clone();
+        if current.ends.u128() < env.block.time.seconds().into() {
+            current = state.phases[state.current_phase as usize + 1].clone();
+        }
         Ok(current)
     }
 }
