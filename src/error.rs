@@ -10,7 +10,7 @@ pub enum ContractError {
     InsufficientFunds {},
 
     #[error("Unauthorized")]
-    Unauthorized {},
+    Unauthorized { reason: String },
 
     #[error("Not found")]
     NotFound {}

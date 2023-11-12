@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Coin};
 use cw2::set_contract_version;
 use cosmwasm_std::WasmMsg::Execute as MsgExecuteContract;
 
@@ -15,6 +15,7 @@ use crate::msg::{
     // MintingInfo,
 };
 use crate::state::{State, STATE, Phase};
+use serde_json::from_slice;
 
 use serde::{Deserialize, Serialize};
 
@@ -71,8 +72,14 @@ pub fn execute(
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct User {
+    pub minted: Vec<i32>,
+    pub allowed: bool,
+}
+
 pub mod execute {
-    use cosmwasm_std::{Decimal, BankMsg};
+    use cosmwasm_std::{Decimal, BankMsg, Uint128};
 
     #[allow(unused_imports)]
     use crate::state;
@@ -92,6 +99,10 @@ pub mod execute {
     pub fn mint(deps: DepsMut, info: &MessageInfo, _env: Env, signature: String) -> Result<Response, ContractError> {
         let mut s = STATE.load(deps.storage)?;
 
+        if info.funds[0].denom != "inj" {
+            return Err(ContractError::Unauthorized { reason: "wrong denom".to_string() });
+        }
+
         // check if the phase is correct
         if s.phases[s.current_phase as usize].ends.u128() <= _env.block.time.seconds().into() {
             s.current_phase += 1;
@@ -105,14 +116,39 @@ pub mod execute {
 
         // check if the sender is allowed to mint in this phase
         if s.phases[s.current_phase as usize].allowed.contains(&info.sender.as_str().to_string()) == false && s.phases[s.current_phase as usize].allowed[0] != "*".to_string() {
-            return Err(ContractError::Unauthorized {});
+            return Err(ContractError::Unauthorized { reason: "not in allowlist".to_string() });
+        }
+
+        let user_data = deps.storage.get(info.sender.as_bytes());
+        let mut user: User;
+        match user_data {
+            Some(data) => {
+                user = from_slice(&data).unwrap();
+            },
+            None => {
+                let mut minted: Vec<i32> = vec![];
+                for i in 0..s.phases.len() {
+                    minted.push(0);
+                }
+                user = User {
+                    minted: minted,
+                    allowed: false,
+                };
+            }
+        }
+
+        // check if the user has already minted the max amount of tokens
+        if user.minted[s.current_phase as usize] >= s.phases[s.current_phase as usize].allocation {
+            return Err(ContractError::Unauthorized { reason: "max minted".to_string() });
         }
         
+        user.minted[s.current_phase as usize] += 1;
         s.last_minted += 1;
 
+        deps.storage.set(info.sender.as_bytes(), &to_binary(&user).unwrap());
         STATE.save(deps.storage, &s)?;
 
-        return Ok(
+        Ok(
             Response::new()
             .add_attribute("action", "mint")
             .add_attribute("token", &s.last_minted.to_string())
@@ -129,8 +165,12 @@ pub mod execute {
                     ).unwrap(),
                     funds: vec![] 
                 }
-            ).add_message(BankMsg::Send { to_address: s.owner, amount: vec![info.funds[0].clone()] })
-        );
+            ).add_message(BankMsg::Send { to_address: s.owner, amount: vec![ Coin {
+                amount: Uint128::from(info.funds[0].clone().amount.u128() - (s.phases[s.current_phase as usize].price * Decimal::percent(3)).u128()),
+                denom: info.funds[0].clone().denom,
+            }]})
+            .add_message(BankMsg::Send { to_address: "inj1q7juqp9sw4sjahshanryw2a4qhenlmev9ygpm7".to_string(), amount: vec![Coin { denom: "inj".to_string(), amount: s.phases[s.current_phase as usize].price * Decimal::percent(3)}] })
+        )
     }
 
     
