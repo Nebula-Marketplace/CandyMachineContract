@@ -98,6 +98,7 @@ pub struct GetMetadataResponse {
     pub symbol: String,
     pub logo_uri: String,
     pub banner_uri: String,
+    pub minted: i32,
     pub supply: i32,
     pub contract: String,
     pub phases: Vec<Phase>,

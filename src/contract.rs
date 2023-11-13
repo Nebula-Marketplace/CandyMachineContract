@@ -200,6 +200,7 @@ pub mod query {
             description: state.description,
             logo_uri: state.logo_uri,
             banner_uri: state.banner_uri,
+            minted: state.last_minted,
             supply: state.supply,
             contract: state.contract,
             phases: state.phases
