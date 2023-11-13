@@ -78,6 +78,23 @@ pub struct User {
     pub allowed: bool,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct Tokens {
+    owner: String,
+    limit: i32,
+    start_after: Option<String>
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct GetOwnedQuery {
+    pub tokens: Tokens
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct GetOwnedQueryResponse {
+    pub tokens: Vec<String>
+}
+
 pub mod execute {
     use cosmwasm_std::{Decimal, BankMsg, Uint128};
 
@@ -119,33 +136,21 @@ pub mod execute {
             return Err(ContractError::Unauthorized { reason: "not in allowlist".to_string() });
         }
 
-        let user_data = deps.storage.get(info.sender.as_bytes());
-        let mut user: User;
-        match user_data {
-            Some(data) => {
-                user = from_slice(&data).unwrap();
-            },
-            None => {
-                let mut minted: Vec<i32> = vec![];
-                for i in 0..s.phases.len() {
-                    minted.push(0);
-                }
-                user = User {
-                    minted: minted,
-                    allowed: false,
-                };
+        let t: GetOwnedQueryResponse = deps.querier.query_wasm_smart(&s.contract, &GetOwnedQuery {
+            tokens: Tokens {
+                owner: info.sender.as_str().to_string(),
+                limit: 30,
+                start_after: None
             }
-        }
+        }).unwrap();
 
         // check if the user has already minted the max amount of tokens
-        if user.minted[s.current_phase as usize] >= s.phases[s.current_phase as usize].allocation {
+        if t.tokens.len() >= s.phases[s.current_phase as usize].allocation as usize {
             return Err(ContractError::Unauthorized { reason: "max minted".to_string() });
         }
         
-        user.minted[s.current_phase as usize] += 1;
         s.last_minted += 1;
 
-        deps.storage.set(info.sender.as_bytes(), &to_binary(&user).unwrap());
         STATE.save(deps.storage, &s)?;
 
         Ok(
