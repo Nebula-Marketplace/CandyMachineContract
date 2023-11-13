@@ -1,6 +1,16 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Coin};
+use cosmwasm_std::{
+    to_binary, 
+    Binary, 
+    Deps, 
+    DepsMut, 
+    Env, 
+    MessageInfo, 
+    Response, 
+    StdResult, 
+    Coin
+};
 use cw2::set_contract_version;
 use cosmwasm_std::WasmMsg::Execute as MsgExecuteContract;
 
@@ -15,7 +25,6 @@ use crate::msg::{
     // MintingInfo,
 };
 use crate::state::{State, STATE, Phase};
-use serde_json::from_slice;
 
 use serde::{Deserialize, Serialize};
 
