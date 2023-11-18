@@ -101,7 +101,7 @@ pub struct GetOwnedQuery {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct GetOwnedQueryResponse {
-    pub tokens: Vec<String>
+    pub ids: Vec<String>
 }
 
 pub mod execute {
@@ -151,10 +151,10 @@ pub mod execute {
                 limit: 30,
                 start_after: None
             }
-        }).unwrap();
+        })?;
 
         // check if the user has already minted the max amount of tokens
-        if t.tokens.len() >= s.phases[s.current_phase as usize].allocation as usize {
+        if t.ids.len() >= s.phases[s.current_phase as usize].allocation as usize {
             return Err(ContractError::Unauthorized { reason: "max minted".to_string() });
         }
         
