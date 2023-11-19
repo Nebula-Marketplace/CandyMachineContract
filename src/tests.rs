@@ -327,7 +327,7 @@ fn mint_limit() {
             expires: None
         },
         &vec![]
-    ).expect("Minting is borked");
+    ).expect("approval is borked");
 
     // attempt to mint tokens
     // first should succeed, second should fail
