@@ -1,8 +1,17 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+#[allow(deprecated)]
 use cosmwasm_std::{
-    to_binary, Addr, CosmosMsg, CustomQuery, Querier, QuerierWrapper, StdResult, WasmMsg, WasmQuery,
+    to_binary, 
+    Addr, 
+    CosmosMsg, 
+    CustomQuery, 
+    Querier, 
+    QuerierWrapper, 
+    StdResult, 
+    WasmMsg,
+    WasmQuery
 };
 
 use crate::msg::{ExecuteMsg, GetMetadataResponse, QueryMsg};
@@ -12,6 +21,7 @@ use crate::msg::{ExecuteMsg, GetMetadataResponse, QueryMsg};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct CwTemplateContract(pub Addr);
 
+#[allow(deprecated)]
 impl CwTemplateContract {
     pub fn addr(&self) -> Addr {
         self.0.clone()

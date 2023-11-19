@@ -1,5 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
+#[allow(deprecated)]
 use cosmwasm_std::{
     to_binary, 
     Binary, 
@@ -162,6 +163,7 @@ pub mod execute {
 
         STATE.save(deps.storage, &s)?;
 
+        #[allow(deprecated)]
         Ok(
             Response::new()
             .add_attribute("action", "mint")
@@ -192,6 +194,7 @@ pub mod execute {
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    #[allow(deprecated)]
     match msg {
         QueryMsg::GetMetadata {} => to_binary(&query::get_metadata(deps)?),
         QueryMsg::GetPhase {} => to_binary(&query::get_phase(deps, env)?),

@@ -49,4 +49,5 @@ cw-utils = "1.0.1"
 serde_json = "1.0.64"
 
 [dev-dependencies]
-cw-multi-test = "0.16.5"
+cw-multi-test = "0.18.0"
+nft_multi_test = {git = "https://github.com/Nebula-Marketplace/NftMultitest.git", version = "1.0.1"}
