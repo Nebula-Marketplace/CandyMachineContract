@@ -181,11 +181,12 @@ pub mod execute {
                     ).unwrap(),
                     funds: vec![] 
                 }
-            ).add_message(BankMsg::Send { to_address: s.owner, amount: vec![ Coin {
-                amount: Uint128::from(info.funds[0].clone().amount.u128() - (s.phases[s.current_phase as usize].price * Decimal::percent(3)).u128()),
-                denom: info.funds[0].clone().denom,
-            }]})
-            .add_message(BankMsg::Send { to_address: "inj1q7juqp9sw4sjahshanryw2a4qhenlmev9ygpm7".to_string(), amount: vec![Coin { denom: "inj".to_string(), amount: s.phases[s.current_phase as usize].price * Decimal::percent(3)}] })
+            )
+            // .add_message(BankMsg::Send { to_address: s.owner, amount: vec![ Coin {
+            //     amount: Uint128::from(info.funds[0].clone().amount.u128() - (s.phases[s.current_phase as usize].price * Decimal::percent(3)).u128()),
+            //     denom: info.funds[0].clone().denom,
+            // }]})
+            // .add_message(BankMsg::Send { to_address: "inj1q7juqp9sw4sjahshanryw2a4qhenlmev9ygpm7".to_string(), amount: vec![Coin { denom: "inj".to_string(), amount: s.phases[s.current_phase as usize].price * Decimal::percent(3)}] })
         )
     }
 

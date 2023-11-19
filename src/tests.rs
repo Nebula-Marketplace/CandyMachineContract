@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Empty, Uint128, Coin};
+use cosmwasm_std::{Addr, Empty, Uint128, Coin, coins};
 use cw_multi_test::{App, ContractWrapper, Executor};
 use nft_multi_test;
 
@@ -125,9 +125,9 @@ fn mint() {
 
     // mint a token
     app.execute_contract(
-        Addr::unchecked("user"), 
+        Addr::unchecked("owner"), 
         candyMachine, 
         &ExecuteMsg::Mint { signature: "garbage".to_string() }, 
-        &vec![Coin {denom: "inj".to_string(), amount: Uint128::new(1030000000000 as u128)}]
+        &coins(1000000000000, "inj")
     ).expect("Minting is borked");
 } 
