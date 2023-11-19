@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Empty, Uint128, Coin, coins};
+use cosmwasm_std::{Addr, Empty, Uint128};
 use cw_multi_test::{App, ContractWrapper, Executor};
 use nft_multi_test;
 
@@ -95,7 +95,7 @@ fn mint() {
         Addr::unchecked("owner"), 
         &InstantiateMsg {
             collection: "collection".to_string(),
-            contract: String::from(nft_contract),
+            contract: String::from(&nft_contract),
             description: "description".to_string(),
             symbol: "symbol".to_string(),
             logo_uri: "logo_uri".to_string(),
@@ -110,7 +110,7 @@ fn mint() {
                 Phase { 
                     name: "public".to_string(), 
                     allowed: vec!["owner".to_string(),], 
-                    price: Uint128::from(1000000000000 as u64), 
+                    price: Uint128::zero(), 
                     ends: Uint128::from(time::SystemTime::now().duration_since(UNIX_EPOCH).expect("time is broken").as_secs() + 1000), 
                     starts: Uint128::from(time::SystemTime::now().duration_since(UNIX_EPOCH).expect("time is broken").as_secs()), 
                     allocation: 5
@@ -123,11 +123,22 @@ fn mint() {
         None
     ).expect("contract failed to instantiate");
 
+    // approve CM for transfer
+    app.execute_contract(
+        Addr::unchecked("owner"),
+        Addr::unchecked(&nft_contract),
+        &nft_multi_test::ExecuteMsg::<Option<Empty>>::ApproveAll { 
+            operator: String::from(&candyMachine), 
+            expires: None
+        },
+        &vec![]
+    ).expect("Minting is borked");
+
     // mint a token
     app.execute_contract(
         Addr::unchecked("owner"), 
         candyMachine, 
         &ExecuteMsg::Mint { signature: "garbage".to_string() }, 
-        &coins(1000000000000, "inj")
+        &vec![]
     ).expect("Minting is borked");
 } 

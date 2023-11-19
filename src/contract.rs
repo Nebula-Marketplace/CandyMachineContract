@@ -14,6 +14,8 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use cosmwasm_std::WasmMsg::Execute as MsgExecuteContract;
+use cw721::Cw721QueryMsg::Tokens;
+use cw721::TokensResponse;
 
 use crate::error::ContractError;
 use crate::msg::{
@@ -88,25 +90,30 @@ pub struct User {
     pub allowed: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub struct Tokens {
-    owner: String,
-    limit: i32,
-    start_after: Option<String>
-}
+// #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+// pub struct Tokens {
+//     owner: String,
+//     limit: Option<i32>,
+//     start_after: Option<String>
+// }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub struct GetOwnedQuery {
-    pub tokens: Tokens
-}
+// #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+// pub struct GetOwnedQuery {
+//     pub tokens: Tokens
+// }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub struct GetOwnedQueryResponse {
-    pub ids: Vec<String>
-}
+// #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+// pub struct GetOwnedQueryResponse {
+//     pub ids: Vec<String>
+// }
+
+// #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+// pub struct GetOwnedQueryResponseWrapper {
+//     pub data: GetOwnedQueryResponse
+// }
 
 pub mod execute {
-    use cosmwasm_std::{Decimal, BankMsg, Uint128};
+    use cosmwasm_std::{Decimal, BankMsg, Uint128, Empty};
 
     #[allow(unused_imports)]
     use crate::state;
@@ -122,13 +129,9 @@ pub mod execute {
     This mechanism will protect against botting, as it means you have to mint through a website.
     Custom sites will init their contract with their own verifier, hence why this is not hardcoded.
     */
-    #[allow(unused_variables)]
+    #[allow(unused_variables, deprecated)]
     pub fn mint(deps: DepsMut, info: &MessageInfo, _env: Env, signature: String) -> Result<Response, ContractError> {
         let mut s = STATE.load(deps.storage)?;
-
-        if info.funds[0].denom != "inj" {
-            return Err(ContractError::Unauthorized { reason: "wrong denom".to_string() });
-        }
 
         // check if the phase is correct
         if s.phases[s.current_phase as usize].ends.u128() <= _env.block.time.seconds().into() {
@@ -136,9 +139,17 @@ pub mod execute {
             STATE.save(deps.storage, &s)?; // save the new state, just in case the remainder of the call fails. this will make querying faster too.
         }
 
-        // check if enough funds were passed
-        if info.funds[0].amount < s.phases[s.current_phase as usize].price + (s.phases[s.current_phase as usize].price * Decimal::percent(3)) {
-            return Err(ContractError::InsufficientFunds {});
+        if info.funds.len() < 1 && s.phases[s.current_phase as usize].price != Uint128::zero() {
+            return Err(ContractError::Unauthorized { reason: "no funds".to_string() });
+        }
+
+        if info.funds.len() > 0 {
+            if info.funds[0].denom != "inj" && s.phases[s.current_phase as usize].price != Uint128::zero() {
+                return Err(ContractError::Unauthorized { reason: "wrong denom".to_string() });
+            }
+            if info.funds[0].amount < s.phases[s.current_phase as usize].price + (s.phases[s.current_phase as usize].price * Decimal::percent(3)) {
+                return Err(ContractError::InsufficientFunds {});
+            }
         }
 
         // check if the sender is allowed to mint in this phase
@@ -146,16 +157,14 @@ pub mod execute {
             return Err(ContractError::Unauthorized { reason: "not in allowlist".to_string() });
         }
 
-        let t: GetOwnedQueryResponse = deps.querier.query_wasm_smart(&s.contract, &GetOwnedQuery {
-            tokens: Tokens {
-                owner: info.sender.as_str().to_string(),
-                limit: 30,
+        let t: TokensResponse = deps.querier.query_wasm_smart(&s.contract, &Tokens {
+                owner: info.sender.to_string(),
+                limit: None,
                 start_after: None
-            }
-        })?;
+        }).expect("failed to query contract");
 
         // check if the user has already minted the max amount of tokens
-        if t.ids.len() >= s.phases[s.current_phase as usize].allocation as usize {
+        if t.tokens.len() >= s.phases[s.current_phase as usize].allocation as usize {
             return Err(ContractError::Unauthorized { reason: "max minted".to_string() });
         }
         
@@ -163,34 +172,37 @@ pub mod execute {
 
         STATE.save(deps.storage, &s)?;
 
-        #[allow(deprecated)]
-        Ok(
-            Response::new()
-            .add_attribute("action", "mint")
-            .add_attribute("token", &s.last_minted.to_string())
-            .add_message(
-                MsgExecuteContract { 
-                    contract_addr: s.contract, 
-                    msg: to_binary(
-                        &Tmessage{ 
-                            transfer_nft: SendTokenMsg { 
-                                recipient: info.sender.as_str().to_string(), 
-                                token_id: (&s.last_minted - 1).to_string() // TODO: get token id
-                            }
+        let mut resp: Response<Empty> = Response::new().add_attribute("action", "mint");
+        resp = resp.add_message(
+            MsgExecuteContract { 
+                contract_addr: s.contract, 
+                msg: to_binary(
+                    &Tmessage{ 
+                        transfer_nft: SendTokenMsg { 
+                            recipient: info.sender.as_str().to_string(), 
+                            token_id: (&s.last_minted - 1).to_string() // TODO: get token id
                         }
-                    ).unwrap(),
-                    funds: vec![] 
-                }
-            )
-            // .add_message(BankMsg::Send { to_address: s.owner, amount: vec![ Coin {
-            //     amount: Uint128::from(info.funds[0].clone().amount.u128() - (s.phases[s.current_phase as usize].price * Decimal::percent(3)).u128()),
-            //     denom: info.funds[0].clone().denom,
-            // }]})
-            // .add_message(BankMsg::Send { to_address: "inj1q7juqp9sw4sjahshanryw2a4qhenlmev9ygpm7".to_string(), amount: vec![Coin { denom: "inj".to_string(), amount: s.phases[s.current_phase as usize].price * Decimal::percent(3)}] })
-        )
-    }
+                    }
+                ).unwrap(),
+                funds: vec![] 
+            }
+        );
+        if s.phases[s.current_phase as usize].price != Uint128::zero() {
+            resp = resp.add_message(BankMsg::Send { 
+                to_address: s.owner, 
+                amount: vec![ Coin { // send the funds to the owner
+                    amount: Uint128::from(info.funds[0].clone().amount.u128() - (s.phases[s.current_phase as usize].price * Decimal::percent(3)).u128()),
+                    denom: info.funds[0].clone().denom,
+                }]
+            })
+            .add_message(BankMsg::Send { // send the fee to the treasury
+                to_address: "inj1q7juqp9sw4sjahshanryw2a4qhenlmev9ygpm7".to_string(), 
+                amount: vec![Coin { denom: "inj".to_string(), amount: s.phases[s.current_phase as usize].price * Decimal::percent(3)}] 
+            })
+        }
 
-    
+        Ok(resp)
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
