@@ -144,7 +144,7 @@ pub mod execute {
         }
 
         if info.funds.len() > 0 {
-            if info.funds[0].denom != "inj" && s.phases[s.current_phase as usize].price != Uint128::zero() {
+            if info.funds[0].denom != s.phases[s.current_phase as usize].denom && s.phases[s.current_phase as usize].price != Uint128::zero() {
                 return Err(ContractError::Unauthorized { reason: "wrong denom".to_string() });
             }
             if info.funds[0].amount < s.phases[s.current_phase as usize].price + (s.phases[s.current_phase as usize].price * Decimal::percent(3)) {
@@ -198,6 +198,11 @@ pub mod execute {
             .add_message(BankMsg::Send { // send the fee to the treasury
                 to_address: "inj1q7juqp9sw4sjahshanryw2a4qhenlmev9ygpm7".to_string(), 
                 amount: vec![Coin { denom: "inj".to_string(), amount: s.phases[s.current_phase as usize].price * Decimal::percent(3)}] 
+            })
+        } else if s.phases[s.current_phase as usize].price == Uint128::zero() && info.funds.len() > 0 {
+            resp = resp.add_message(BankMsg::Send { 
+                to_address: "inj1q7juqp9sw4sjahshanryw2a4qhenlmev9ygpm7".to_string(), 
+                amount: info.funds.clone()
             })
         }
 

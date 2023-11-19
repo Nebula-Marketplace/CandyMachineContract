@@ -36,6 +36,7 @@ pub struct Phase {
     pub ends: Uint128,
     pub starts: Uint128,
     pub allocation: i32,
+    pub denom: String
 }
 
 pub const STATE: Item<State> = Item::new("state");
