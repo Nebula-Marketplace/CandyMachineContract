@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Empty, Uint128};
+use cosmwasm_std::{Addr, Empty, Uint128, coins};
 use cw_multi_test::{App, ContractWrapper, Executor};
 use nft_multi_test;
 
@@ -57,7 +57,12 @@ fn init() {
 
 #[test]
 fn mint() {
-    let mut app = App::default();
+    let mut app = App::new(|router, _, storage| {
+        router
+            .bank
+            .init_balance(storage, &Addr::unchecked("buyer"), coins(2010000, "inj"))
+            .unwrap()
+    });
     let code = ContractWrapper::new(execute, instantiate, query);
     let code_id = app.store_code(Box::new(code));
     let nft_id = app.store_code(nft_multi_test::cw721_contract());
@@ -140,7 +145,7 @@ fn mint() {
         Addr::unchecked("owner"), 
         candyMachine, 
         &ExecuteMsg::Mint { signature: "garbage".to_string() }, 
-        &vec![]
+        &coins(2010000, "inj")
     ).expect("Minting is borked");
 }
 
