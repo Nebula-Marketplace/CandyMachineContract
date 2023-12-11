@@ -139,10 +139,6 @@ pub mod execute {
             STATE.save(deps.storage, &s)?; // save the new state, just in case the remainder of the call fails. this will make querying faster too.
         }
 
-        if info.funds.len() < 1 && s.phases[s.current_phase as usize].price != Uint128::zero() {
-            return Err(ContractError::Unauthorized { reason: "no funds".to_string() });
-        }
-
         if info.funds.len() > 0 {
             if info.funds[0].denom != s.phases[s.current_phase as usize].denom && s.phases[s.current_phase as usize].price != Uint128::zero() {
                 return Err(ContractError::Unauthorized { reason: "wrong denom".to_string() });
@@ -150,6 +146,8 @@ pub mod execute {
             if info.funds[0].amount < s.phases[s.current_phase as usize].price + (s.phases[s.current_phase as usize].price * Decimal::percent(3)) {
                 return Err(ContractError::InsufficientFunds {});
             }
+        } else {
+            return Err(ContractError::Unauthorized { reason: "no funds".to_string() });
         }
 
         // check if the sender is allowed to mint in this phase
@@ -196,12 +194,12 @@ pub mod execute {
                 }]
             })
             .add_message(BankMsg::Send { // send the fee to the treasury
-                to_address: "inj1q7juqp9sw4sjahshanryw2a4qhenlmev9ygpm7".to_string(), 
+                to_address: "inj1f4psdn7c7ap3aruu5zpex5p9a05k8qd077736v".to_string(), 
                 amount: vec![Coin { denom: "inj".to_string(), amount: s.phases[s.current_phase as usize].price * Decimal::percent(3)}] 
             })
         } else if s.phases[s.current_phase as usize].price == Uint128::zero() && info.funds.len() > 0 {
             resp = resp.add_message(BankMsg::Send { 
-                to_address: "inj1q7juqp9sw4sjahshanryw2a4qhenlmev9ygpm7".to_string(), 
+                to_address: "inj1f4psdn7c7ap3aruu5zpex5p9a05k8qd077736v".to_string(), 
                 amount: info.funds.clone()
             })
         }
