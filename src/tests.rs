@@ -10,7 +10,12 @@ pub type Extension = Option<Empty>;
 
 #[test]
 fn init() {
-    let mut app = App::default();
+    let mut app = App::new(|router, _, storage| {
+        router
+            .bank
+            .init_balance(storage, &Addr::unchecked("owner"), coins(2010000, "inj"))
+            .unwrap()
+    });
 
     let code = ContractWrapper::new(execute, instantiate, query);
     let code_id = app.store_code(Box::new(code));
@@ -151,7 +156,12 @@ fn mint() {
 
 #[test]
 fn allowlist() {
-    let mut app = App::default();
+    let mut app = App::new(|router, _, storage| {
+        router
+            .bank
+            .init_balance(storage, &Addr::unchecked("owner"), coins(2010000, "inj"))
+            .unwrap()
+    });
     let code = ContractWrapper::new(execute, instantiate, query);
     let code_id = app.store_code(Box::new(code));
     let nft_id = app.store_code(nft_multi_test::cw721_contract());
@@ -234,7 +244,7 @@ fn allowlist() {
         Addr::unchecked("random"), 
         candyMachine, 
         &ExecuteMsg::Mint { signature: "garbage".to_string() }, 
-        &vec![]
+        &coins(2010000, "inj")
     ).unwrap_err().downcast().unwrap();
 
     assert_eq!(
@@ -245,7 +255,12 @@ fn allowlist() {
 
 #[test]
 fn mint_limit() {
-    let mut app = App::default();
+    let mut app = App::new(|router, _, storage| {
+        router
+            .bank
+            .init_balance(storage, &Addr::unchecked("random"), coins(2010000, "inj"))
+            .unwrap()
+    });
     let code = ContractWrapper::new(execute, instantiate, query);
     let code_id = app.store_code(Box::new(code));
     let nft_id = app.store_code(nft_multi_test::cw721_contract());
@@ -340,14 +355,14 @@ fn mint_limit() {
         Addr::unchecked("random"), 
         Addr::unchecked(&candyMachine), 
         &ExecuteMsg::Mint { signature: "garbage".to_string() }, // first mint should succeed
-        &vec![]
+        &coins(1005000, "inj")
     ).expect("Could not mint from CM");
 
     let err: ContractError = app.execute_contract(
         Addr::unchecked("random"), 
         Addr::unchecked(&candyMachine), 
         &ExecuteMsg::Mint { signature: "garbage".to_string() }, // first mint should succeed
-        &vec![]
+        &coins(1005000, "inj")
     ).unwrap_err().downcast().unwrap();
 
     assert_eq!(
