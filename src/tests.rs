@@ -159,7 +159,7 @@ fn allowlist() {
     let mut app = App::new(|router, _, storage| {
         router
             .bank
-            .init_balance(storage, &Addr::unchecked("owner"), coins(2010000, "inj"))
+            .init_balance(storage, &Addr::unchecked("random"), coins(2010000, "inj"))
             .unwrap()
     });
     let code = ContractWrapper::new(execute, instantiate, query);
