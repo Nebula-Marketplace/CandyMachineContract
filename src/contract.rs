@@ -15,7 +15,7 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 use cosmwasm_std::WasmMsg::Execute as MsgExecuteContract;
 use cw721::Cw721QueryMsg::Tokens;
-use cw721::TokensResponse;
+use schemars::JsonSchema;
 
 use crate::error::ContractError;
 use crate::msg::{
@@ -112,6 +112,15 @@ pub struct User {
 //     pub data: GetOwnedQueryResponse
 // }
 
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct TokensResponse {
+    /// Contains all token_ids in lexicographical ordering
+    /// If there are more than `limit`, use `start_from` in future queries
+    /// to achieve pagination.
+    pub ids: Vec<String>,
+}
+
+
 pub mod execute {
     use cosmwasm_std::{Decimal, BankMsg, Uint128, Empty};
 
@@ -162,7 +171,7 @@ pub mod execute {
         }).expect("failed to query contract");
 
         // check if the user has already minted the max amount of tokens
-        if t.tokens.len() >= s.phases[s.current_phase as usize].allocation as usize {
+        if t.ids.len() >= s.phases[s.current_phase as usize].allocation as usize {
             return Err(ContractError::Unauthorized { reason: "max minted".to_string() });
         }
         
